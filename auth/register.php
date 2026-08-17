@@ -3,8 +3,18 @@ session_start();
 
 require_once "../config/database.php";
 
+// Redirect if already logged in
+if (isset($_SESSION["user_id"])) {
+    $role = $_SESSION["user_role"] ?? $_SESSION["role"] ?? "user";
+    header("Location: " . ($role === "admin" ? "../admin/dashboard.php" : "../page/dashboard.php"));
+    exit;
+}
+
 $message = "";
 $message_type = "";
+$name = "";
+$email = "";
+$phone = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
@@ -39,7 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         // Check existing email
         $check = $pdo->prepare(
-            "SELECT id FROM users WHERE email = ?"
+            "SELECT id FROM users WHERE email = ? LIMIT 1"
         );
 
         $check->execute([$email]);
@@ -67,12 +77,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $stmt->execute([
                 $name,
                 $email,
-                $phone,
+                $phone !== "" ? $phone : null,
                 $hashed_password
             ]);
 
             $message = "Registration successful! You can now login.";
             $message_type = "success";
+
+            // Clear inputs after successful registration
+            $name = "";
+            $email = "";
+            $phone = "";
         }
     }
 }
@@ -244,6 +259,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 type="text"
                 id="name"
                 name="name"
+                value="<?= htmlspecialchars($name) ?>"
                 placeholder="Enter your full name"
                 required
             >
@@ -258,6 +274,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 type="email"
                 id="email"
                 name="email"
+                value="<?= htmlspecialchars($email) ?>"
                 placeholder="Enter your email"
                 required
             >
@@ -272,6 +289,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 type="text"
                 id="phone"
                 name="phone"
+                value="<?= htmlspecialchars($phone) ?>"
                 placeholder="Enter your phone number"
             >
 
